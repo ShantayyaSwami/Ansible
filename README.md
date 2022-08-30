@@ -53,30 +53,30 @@ ansible mysql -a "/sbin/reboot" -f 20
 ```
 > Run ansible using specific user
 ```yaml
-ansible nginx -a "/usr/bin/foo" -u anmolnagpal
+ansible nginx -a "/usr/bin/foo" -u shantayya
 ```
 > Run ansible using specific user
 ```yaml
-ansible nginx -a "/usr/bin/foo" -u anmolnagpal
+ansible nginx -a "/usr/bin/foo" -u shantayya
 ```
 #### File Transfer
 
 > Transfer file to many servers
 ```yaml
-ansible nginx -m copy -a "src=/etc/anmol.txt dest=/tmp/anmol.txt"
+ansible nginx -m copy -a "src=/etc/shantayya.txt dest=/tmp/shantayya.txt"
 ```
 > Transfer file with specific ownership & permission
 ```yaml
-ansible nginx -m file -a "src=/etc/anmol.txt dest=/tmp/anmol.txt mode=600"
-ansible nginx -m file -a "src=/etc/anmol.txt dest=/tmp/anmol.txt mode=600 owner=anmol gorup=anmol"
+ansible nginx -m file -a "src=/etc/shantayya.txt dest=/tmp/shantayya.txt mode=600"
+ansible nginx -m file -a "src=/etc/shantayya.txt dest=/tmp/shantayya.txt mode=600 owner=shantayya gorup=shantayya"
 ```
 > Create Directories
 ```yaml
-ansible nginx -m file -a "dest=/tmp/clouddrove mode=755 owner=anmol gorup=anmol stage=directory"
+ansible nginx -m file -a "dest=/tmp/ mode=755 owner=shantayya gorup=shantayya stage=directory"
 ```
 > Delete Directories
 ```yaml
-ansible nginx -m file -a "dest=/tmp/clouddrove state=absent"
+ansible nginx -m file -a "dest=/tmp/ state=absent"
 ```
 
 #### Manage Packages
