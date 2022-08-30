@@ -206,11 +206,7 @@ ansible-playbook users.yml --vault-password-file /anmol/.ansible/vault-passwd
 More about Ansible:
 
 - https://docs.ansible.com/ansible/latest/index.html
-- https://medium.com/clouddrove/about-ansible-vault-cbeeae7add87
-- https://medium.com/tech-tajawal/ansible-an-effective-it-automation-tool-be603417ea1a
 
 ## 👬 Contribution
 - Open pull request with improvements
 - Discuss ideas in issues
-
-- Reach out with any feedback [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/anmol_nagpal.svg?style=social&label=Follow%20%40anmol_nagpal)](https://twitter.com/anmol_nagpal)
