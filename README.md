@@ -212,8 +212,7 @@ anisble all -b -m user -a "name=shantayya owner=ansible group=ansible mode=0755"
 > Copy file from conrtol node to managed node
 ```yaml 
 ansible all -m copy -a "src=/home/ansible dest=/home/ansible/shnatayya" 
-```
-    
+``` 
 ### or
 ```yaml 
 ansible all -m copy -a "content='Hello, This is shan' dest=/home/ansible/copy.txt"
@@ -263,8 +262,6 @@ ansible all -m shell -a "ls -lrt"
 ```yaml 
 ansible all -m replace -a "path=/home/ansible/shantayya/shantayya.txt regexp='(^Hello)' replace='Bye' backup=yes"
 ```
-    
-### -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ```bash
 ssh-agnet bash $ ssh-add ~/.ssh/id_rsa
