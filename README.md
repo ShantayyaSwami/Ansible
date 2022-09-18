@@ -7,7 +7,7 @@
     </a>
 </p>
 
-### Ansible Core Concepts: 
+# Ansible Core Concepts: 
 ## Invenories : 
 * Inventory file simply consist of list of hostnames. 
 * Default inventory location will be /etc/ansible/hosts but it can be configurable.
@@ -22,14 +22,13 @@
 * Modules are essentially tools for perticuler tasks and can take (usually do) take parameters.
 * They return the JSON and can run from CLI (passing -m) or within playbook. 
 * Ansible supports significant no of modules. Custom modules can also be written. 
-
 **Module list: ping, setup, yum , servic, user, copy, archive, unarchive, get_url, file, Git, Lineinfile, htpasswd, shell/command,script, debug, replace etc**
 
 ## Facts : 
 * Gives certain information about target host. facts gathering can be disabled.
 * it is possible to write custom facts in facts.d directory under /etc/ansible.
 
-* **example: filename.fact + ansible all -m setup -a "filter=ansible_local" **
+* **example: filename.fact + ansible all -m setup -a "filter=ansible_local"**
 
 * All valid files ending with.fact are returned under ansible_local with facts.
 
@@ -39,7 +38,7 @@
 * Var also store values return by commands. Ansible has few predefined var.
 
 ## Plays :
-####set of instruction which can be defined as work or task to be done on target host.
+#### set of instruction which can be defined as work or task to be done on target host.
 * Play may use one or more modules to achieve the desired end state on group of hosts 
 * --retry : To rerun playbook on failed machines only
 * --limit : To run playbooks on only few machines or limit play execution on few machines.
@@ -48,10 +47,10 @@
 
 ## Configuration files : 
 #### config files can be seen at several possible locations (in order processed)
-** * ANSIBLE_CONFIG (an env variable)
-   * ansible.cfg ( in current working dir)
-   * .ansible.cfg( in home dir)
-   * /etc/ansible/ansible.cfg ** 
+* **ANSIBLE_CONFIG (an env variable)**
+* **ansible.cfg ( in current working dir)**
+* **.ansible.cfg( in home dir)**
+* **/etc/ansible/ansible.cfg** 
 
 * Ansible config file has many parameters like inv file location, lib location, modules etc. all these values are commented and if w want to change default behavior then uncomment and change value. 
 * Use -v in command to see which location config file is getting used.
@@ -66,7 +65,7 @@
 
 ## Use conditionals to control play execution :
 #### Handlers - notify, when , with_items, with_files
-**Note: handlers are defined before tasks and notify will be called from task **
+**Note: handlers are defined before tasks and notify will be called from task**
 
 ## Configure error-handling :
 #### ignore_errors = yes, (defined under task name)block-rescue, always
@@ -75,7 +74,7 @@
 
 ## Run specific tasks in playbooks using tags 
 * tags comes under task name like notify keyword and get called with --tags in playbook execution
-* ** example: ansible-playbook <playbname> --tags <tagname> **
+* **example: ansible-playbook <playbname> --tags <tagname>**
 
 ## Ansible template and template module. 
 * All varibales available in playbooks can be referred in templates.
@@ -89,19 +88,21 @@
 * vars_promt throws promt for taking var as input.
 * dictionary var - YAML formatting allows python style dictionaries to be used a var.
     
-**  employee: **
-**      name: bob **
-**      id: 123  **
+**employee:**
+    
+   **name: bob**
+    
+   **id: 123  **
     
 * dictionary var can be accessed as: employee[name] or employee.name
 
 ## Magic var :
 * Ansible defines special var called magic vars. It can use hostvars to look at the facts about other hosts in inventory.
 * group variable that provides inventory info and jinja filters can be used to manipulate text format.
-* **example : **
+* **example :**
 * **{{hostvars['node1']['ansible_distribution']}}**
 * **{{groups['webservers']}}**
-* **{{groups['webservers']|join(' ')}} **
+* **{{groups['webservers']|join(' ')}}**
 
 ## Ansible roles : 
 * Roles are way of automatically loading vars, tasks, templates, handlers based on known file structure in playbooks.
