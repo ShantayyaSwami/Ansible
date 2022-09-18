@@ -179,16 +179,8 @@ Example of Inventory file
 mysql
 nginx
 ```
-
-## Check Connection
-
-```yaml
-$ ansible -m ping <host>
-```
-
-## Ad-Hoc Commands
-
-### Parallelism Shell Commands
+## Ad-hoc commands
+    
 > Check managed servers are reachable or not
 ```yaml    
 ansible all -m ping
