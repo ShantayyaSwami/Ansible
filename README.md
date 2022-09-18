@@ -89,10 +89,8 @@
 * dictionary var - YAML formatting allows python style dictionaries to be used a var.
     
 **employee:**
-    
-   **name: bob**
-    
-   **id: 123  **
+               **name: bob**
+               **id: 123**
     
 * dictionary var can be accessed as: employee[name] or employee.name
 
@@ -190,7 +188,54 @@ $ ansible -m ping <host>
 
 ## Ad-Hoc Commands
 
-#### Parallelism Shell Commands
+### Parallelism Shell Commands
+
+####------------check managed servers are reachable or not----------
+ansible all -m ping
+
+####-----------------Fetch maaged nodes metadata information----------
+ansible all -m setup
+
+####----------Install linux packeges on managed nodes-------------
+ansible all -b  --ask-become-pass -m yum -a "name=httpd state=present/latest/absent"
+
+####-------------Create user on managed nodes-----------------
+anisble all -b -m user -a "name=shantayya owner=ansible group=ansible mode=0755"
+
+####------------------copy file from conrtol node to managed node-----------------
+ansible all -m copy -a "src=/home/ansible dest=/home/ansible/shnatayya"      
+or
+ansible all -m copy -a "content='Hello, This is shan' dest=/home/ansible/copy.txt"
+
+####-------copy file on same server from one loc to diff as backup---------
+ansible -i <invfile> server -m copy -a "src=/managed/ansible/ansible.txt dest=/managed/ansible/ansible.txt_16092022 remote_src=yes"
+
+####-----------------create directory structure on control node so to only fetch file make flat=yes--------------
+ansible all -m fetch -a "src=/managed/ansible/ansible.txt dest=/contol/ansible flat-> fetch file from managed node to control node
+
+
+####-----------------archive file on managed node, use remove=yes to remove file after archiving ------------
+ansible all -m archive -a "path=/home/ansible/archive.text dest=/home/ansible/shantayya/ansible.tar.gz format=gz/tar remove=yes"
+
+####---------------Unarchive files on managed node, can also include http url in src option--------------
+ansible all -m unarchive -a "src=/home/ansible/ansible.tar.gz dest=/home/shantayya mode=0700"
+
+####-----------download a file or package from url, can also add mode,owner,group and checksum option-------------
+ansible all -m get_url -a "url=http://github.com/shantayya dest=/home/ansible/shantayya "
+
+####-------Create file or dir on managed node--------
+ansible all -m file -a "path=/home/ansible/shantayya/ansible.text state=touch/directory mode=0600"    --> use absent=yes to remove it
+
+####--------To add,updating,removing lines in file, insertbefore, insertafter, state, regexp can be used as options-------
+ansible all -m Lineinfile -a 'dest=/home/ansible/shantayya line="Hello, I am shantayya" backup=yes'
+
+####----------To execute linux one liners---------
+ansible all -m shell -a "ls -lrt"
+
+####---------To replace multiple line in file, 
+ansible all -m replace -a "path=/home/ansible/shantayya/shantayya.txt regexp='(^Hello)' replace='Bye' backup=yes"
+
+###--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ```bash
 ssh-agnet bash $ ssh-add ~/.ssh/id_rsa
