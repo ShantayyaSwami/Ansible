@@ -1,0 +1,373 @@
+Invenories : Inventory file simply consist of list of hostnames. 
+default inventory location will be /etc/ansible/hosts but it can be configurable.
+It also possible to define group of hosts, hosts or group varibales and group or gorups
+within inventory.
+
+dynamic inventory - speciying an executable file as inventory considered as dynamic inventory
+pgm must respond to 2 parameters: --list and --host + using dynamic invenory, you can pull information from cloud,LDAP etc
+ 
+modules - modules are essentially tools for perticuler tasks + can take (usually do) take parameters
+they return the JSON + can run from CLI (-m) or within playbook + significant no of modules  ansible supports
+custom modules can also be written + few core modules
+module list: ping, setup, yum , service, user, copy, archive, unarchive, get_url, file, Git, Lineinfile, htpasswd, shell/command
+,script, debug, replace etc
+
+facts - gives certain information about given target host + facts gathering can be disabled
+it is possible to write custom facts under facts.d directory under /etc/ansible
+example: filename.fact + ansible all -m setup -a "filter=ansible_local"
+all valid files ending with.fact are returned under ansible_local with facts
+
+variable - typically used for configuration values and verious parameters
+var name should be letter, number and underscore + should always start with letter + can be scoped by group, host and even in playbok
+also store values return by commands  + Ansible has predefined var 
+
+plays - set of instruction which can be defined as work or task to be done on target host
+play may use one or more modules to achieve the desired end state on group of hosts 
+--retry - to rerun playbook on failed machines only
+--limit - to run playbooks on only few machines using --limit
+
+playbooks - series of plays
+configuration files - several possible locations (in order processed)
+ANSIBLE_CONFIG (an env variable)
+ansible.cfg ( in current working dir)
+.ansible.cfg( in home dir)
+/etc/ansible/ansible.cfg
+Ansible config file has many parameters like inv file location, lib location, modules etc. all these values are commented 
+and if w want to change default behvr then uncomment and change value
+use -v in command to see which location config file is getting used
+Ansible has the flexibility to have multi config file so that every time changing single file depend on  env is not required.
+
+ad-hoc commands - ad-hoc commands are simply one liners 
+syntax: ansible <hostname or groupname> -i <inv-file> -m <module_name> -a (argument) -f (fork) <number: default is 5>
+
+fetching the output- using register keyword + using debug module to print var
+
+use conditionals to control play execution- Handlers - notify, when , with_items, with_files
+note: handlers are defined out of tasks block and notify will be called from task
+
+Configure error-handling : ignore_errors = yes, (under task name)block-rescue, always
+ignore_errors- ansible stops execution when perticular task fails but if we still want to continue with remainig steps then we can use ignore_errors +
+it will not cover connection or play execution issues.
+rescue executes when block fails
+
+Run specific tasks in playbooks using tags (tags comes under task name like notify) and call with --tags
+example: ansible-playbook <playbname> --tags <tagname> 
+
+Ansible template and template module. all varibales available in playbooks can be referred in templates
+Template gives the ability to provide skeleton file and than can be dynamically completed using variables +
+templates are generally used by providing template file on control node and then using template module in your playbook to deploy file to target node
+templates are processed in jinja2 lang 
+
+working with varibale-> vars, vars_files, vars_promts + use -e '{"var1:value1",...,"var10":"value10"}' to provide var values
+or -e "@users.lst" -> users.lst is file containing lists
+var_files used to include var files in playbook
+vars_promt - throws promt for taking var as input
+dictionary var - YAML formatting allows python style dictionaries to be used a var
+employee: 
+   name: bob
+   id: 123
+dictionary var can be accessed as: employee[name] or employee.name
+Magic var - ansible defines special var called magic vars + can use hostvars to look at the facts about other hosts in inventory
+group variable that provides inventory info + jinja filters can be used to manipulate text format
+{{hostvars['node1']['ansible_distribution']}}
+{{groups['webservers']}}
+{{groups['webservers']|join(' ')}}
+
+ansible roles- way of automatically loading vars, tasks, templates, handlers based on known file structure in playbooks
+roles require perticuler dir structure and atleast require one dir with main.yml
+Example: sample role <dir> -> 
+task - task dir should conatin main list of tasks to be executed by role + main.yml considered as entry point of task section of role
+vars -contains variable used within role + has highest level of precedence and can override inventry variables as well
+defaults - contains default variables for the role + similar as var directory + but has lower level of precedence +
+this dir is only meant to provide value to var if no valu is given.
+var defined within role (using default or var dir) may be accessed across roles + you can pass var on CLI using -e option (highest precedence)
+Handlers - contains handlers which used in role or anywhere outside this role + handlers are essentially tasks flagged to run by notify keyword.
+handler will only be triggered once even if they are notified by multiple tasks.
+Files - contains ordinary files (not var files or templates) which can be deployed via this role + files may be referrenced without path throughout role +
+Templates -templates withing role may be referrenced  without a path throughout role
+meta - defines certain meta data for this role + meta data includes role dependencies and various role level configurations
+such as allow_dulicates etc
+
+Roles may inlcude other roles using dependencies keywork +Dependent roles ar applied prior to role dependent on them +
+roles with same parameters will not be applied more than once but having allow_duplicates:true can allow roles to be applied >1
+
+ansible-galaxy - ansible public repo
+a large public repo of ansible roles + roles ship with readmes detailing role use and avail var + contains large number of roles which are constantly evolving
+'ansible-galaxy' can also create empty role using ansible-galaxy init <role_name>
+ansible-galaxy install <username.role> - used to download roles from galaxy.ansible.com
+roles installed in roles_path may be listed using 'ansible-galaxy list' command
+Remove, search, login are other subcommands 
+
+parallelism in ansible - update forks = 100 in ansible.cfg file to run playbook on 100 worker nodes paralelly
+by Default, process will fork for 5 times + can use -f to set forks in ansible ad-hoc command + serial keyword used in playbook to limit forks
+
+ansible-vault - allows for encryption of file  
+ansible-vault <encrypt/decrypt/edit/view> <file>
+use --ask-vault-password or --ask-vault-file or --vault-id while playbook execution 
+it is possible to set no_log within module to censor sensitive log output
+--vault-id introduced since ansible2.4 version
+
+ansible tower - provides web server interface to ansible + free for minimal use (max 10 hosts)+ need enterprise edition for best use of it
+(user permissioning + autdit trail - benefits)
+
+Ansible hand-on ad-hoc commands
+ping, setup, yum , service, user, copy, archive, unarchive, get_url, file, Git, Lineinfile, htpasswd, shell/command
+,script, debug, replace etc. 
+
+------------check managed servers are reachable or not----------
+ansible all -m ping
+
+-----------------Fetch maaged nodes metadata information----------
+ansible all -m setup
+
+----------Install linux packeges on managed nodes-------------
+ansible all -b  --ask-become-pass -m yum -a "name=httpd state=present/latest/absent"
+
+-------------Create user on managed nodes-----------------
+anisble all -b -m user -a "name=shantayya owner=ansible group=ansible mode=0755"
+
+------------------copy file from conrtol node to managed node-----------------
+ansible all -m copy -a "src=/home/ansible dest=/home/ansible/shnatayya"      
+or
+ansible all -m copy -a "content='Hello, This is shan' dest=/home/ansible/copy.txt"
+
+-------copy file on same server from one loc to diff as backup---------
+ansible -i <invfile> server -m copy -a "src=/managed/ansible/ansible.txt dest=/managed/ansible/ansible.txt_16092022 remote_src=yes"
+
+-----------------create directory structure on control node so to only fetch file make flat=yes--------------
+ansible all -m fetch -a "src=/managed/ansible/ansible.txt dest=/contol/ansible flat-> fetch file from managed node to control node
+
+
+-----------------archive file on managed node, use remove=yes to remove file after archiving ------------
+ansible all -m archive -a "path=/home/ansible/archive.text dest=/home/ansible/shantayya/ansible.tar.gz format=gz/tar remove=yes"
+
+---------------Unarchive files on managed node, can also include http url in src option--------------
+ansible all -m unarchive -a "src=/home/ansible/ansible.tar.gz dest=/home/shantayya mode=0700"
+
+-----------download a file or package from url, can also add mode,owner,group and checksum option-------------
+ansible all -m get_url -a "url=http://github.com/shantayya dest=/home/ansible/shantayya "
+
+-------Create file or dir on managed node--------
+ansible all -m file -a "path=/home/ansible/shantayya/ansible.text state=touch/directory mode=0600"    --> use absent=yes to remove it
+
+--------To add,updating,removing lines in file, insertbefore, insertafter, state, regexp can be used as options-------
+ansible all -m Lineinfile -a 'dest=/home/ansible/shantayya line="Hello, I am shantayya" backup=yes'
+
+----------To execute linux one liners---------
+ansible all -m shell -a "ls -lrt"
+
+---------To replace multiple line in file, 
+ansible all -m replace -a "path=/home/ansible/shantayya/shantayya.txt regexp='(^Hello)' replace='Bye' backup=yes"
+
+
+
+Playbooks
+-----Playbook with ansible control modules: when, with_items, with_files and Handlers-notify
+---
+- hosts: ukdc1-pz-wbp01
+  become: yes
+  handlers: 
+    - name: restartinh httpd
+      service: name="httpd" state="restarted"
+      listen: "restart web"
+  tasks:
+  - name: updating config file
+    replace: 
+     path: /etc/httpd/conf/httpd.conf
+     regexp: '^DocumentRoot.*$'
+     replace: 'DocumentRoot "/var/www/html"'
+     backup: yes
+    notify: "restart web"
+
+
+---
+- hosts: webservers
+  become: yes
+  tasks:
+  - name: create users
+    user: 
+      name: "{{ item }}"
+    with_items:
+      - shan
+      - shankar
+      - somnath
+    ignore_errors: yes
+    when: 
+      - ansible_hostname == "ukdc1-pz-web01"
+
+----------Error handling playbook using Block-rescue, always or ignore_error=yes -----------
+---
+- hosts: wbp01
+  tasks: 
+   - name: download index.html
+     block:
+       - get_url: 
+           url: "http://ukdc1-pz-wbp01.worldpay.local/index.html
+           dest: /tmp/html/
+     rescue: 
+       - debug: msg="Sorry...Downlaod failed try letter"
+     always: 
+       - debug: msg="Playbook executed successfully"
+
+-------------How to run specific task, using --tags keywork------------------------
+---
+- hosts: webserver
+  become: yes
+  ignore_error: yes
+  tasks:
+    - name: copy file on webserver
+      copy: 
+        src: /home/ansible/index.html
+        dest: /var/www/html/index.html
+      tags:
+        - webdeploy
+
+- hosts: dbserver
+  tasks:
+   - name: copy file on db server
+     copy:
+       src: /home/ansible/db.dql
+       dest: /home/sql/db.sql
+     tags:
+       - dbdeploy
+
+----------------Deploy templates in ansible--------------
+vi network.j2
+{{ ansible_default_ipv4.address }}
+
+---
+- hosts: local
+  handlers:
+    - name: restart httpd service
+      service: 
+         name: httpd
+         state: restarted
+      listen: "restart httpd"
+  tasks:
+  - name: deploy httpd.conf file on webserver
+    template: 
+      src: /home/ansible/network.j2
+      dest: /var/www/html/httpd.conf
+    notify: "restart httpd"
+
+ 
+----------------Ansible variables, pass variables using -e "@users.lst"  ------------------------------
+vi users.lst
+staff:
+ - shan
+ - shankar
+ - somnath
+vendors:
+ - Mahesh
+ - Mantu
+others:
+ - Sanket
+
+---
+- hosts: webserver
+  tasks:
+  vars:
+     userFile: /home/ansible/list
+  - name: create file
+    file: 
+      path: "{{ userFile }}"
+      state: touch
+  - name: add line in file
+    Lineinfile:
+      path: "{{ userFile }}"
+      line: "{{ item }}"
+    with_items:
+      - "{{ staff }}"
+      - "{{ vendors }}"
+      - "{{ others }}"
+
+------------------Creating role apache-------------------------------------------------------
+cd /etc/ansible/roles
+mkdir apache
+mkdir /etc/ansible/roles/apache/{templates, files, tasks}
+vi apache/templates/index.j2
+{{ ansible_defaults_ipv4.address}}
+
+vim authorized_keys in files directory
+
+----config role to deploy template-----
+vi apache/tasks/deploy_template.yml
+---
+- template:
+    src: index.j2
+    dest: /var/www/html/
+
+----config role to install nagios-----
+vi apache/tasks/deploy_nagios.yml
+---
+- yum: 
+   name: nrpe
+   state: latest
+
+----config role to create user and add public key
+vi apache/tasks/deploy_user.yml
+---
+- user:
+    name: noc
+- file: 
+    state: directory
+    path: /home/noc/.ssh
+    mode: 0600
+    owner: noc
+    group: noc
+- copy: 
+    src: authorized_keys
+    dest: /home/noc/.ssh/authorized_keys
+    mode: 0600
+    owner: noc 
+    group: noc
+
+---config role to import above yml files in tasks main.yml
+vi apache/tasks/main.yml  ------------ tasks main.yml is act as entry point to execute role
+- name: configure template
+  import_tasks: deploy_template.yml
+
+- name: install nagios
+  import_tasks: deploy_nagios.yml
+
+- name: create user and add auth keys
+  import_tasks: deploy_user.yml
+
+
+--------------we can include apache role in web yml file
+vi /home/ansible/web.yml
+---
+- hosts: webserver
+  roles: 
+    - apache
+  tasks: 
+    - name: install httpd
+      yum: name=httpd state=latest
+    
+    - name: start httpd service
+      service: name=httpd state=restarted enabled=yes
+
+----------------------------------------------------------------------------------------------
+
+----------------using ansible vault in playbook--------------------------------------
+cat vault    (valut file used to encrypt and decrypt playbook)
+password
+
+cat show.txt
+I am Shantayya
+
+ansible-vault --vault-id label@vault_file  <file to be encrypted>
+ansible-vault --vault-id prod@vault show.txt
+
+vi vault.yml
+---
+- hosts: localhost
+  var_files: 
+    - /home/ansible/show.txt
+  tasks: 
+    - name: output message
+      shell: echo "{{ message }}" >> /home/ansible/dislay.txt
+
+ansible-playbook vault.yml --vault-id prod@vault
+---------------------------------------------------------------------------------
+
