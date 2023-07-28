@@ -1,0 +1,57 @@
+[web]
+192.168.1.9
+192.168.1.2
+
+[apps]
+server1.nehraclasses.local
+server2.nehraclasses.local
+
+[weblogic]
+server[1:20].mgt.worldpaypp.local
+
+[ohs]
+192.168.1.[1:5]
+
+[groups:children]
+web
+ohs
+
+ansible web --list-hosts -i ~/inventory/ansible_hostfile_example			--> /etc/hosts	: defualt host file used in ansible
+
+vi /etc/ansible/ansible.cfg
+[defaults]					--> to make custome inventory file as default
+inventory = /home/shantayya/inventory
+remote_user = ansible
+ask_pass = false
+
+[privilege_escalation]
+become = true
+become_method = sudo
+become_user = root
+become_ask_pass = false
+
+Connection with managed nodes:
+1. with password
+
+use -k option to promt for password:
+ansible web -m ping -k				--> even after using -k,if commands fails ssh then use hosts_key_checking = false in ansible.cfg file. 
+
+	
+2. passwordless
+3. define password in inventory
+[web]
+192.168.1.9	ansible_ssh_user=ansible	ansible_ssh_pass=redhat
+192.168.1.2	ansible_ssh_user=jenkins	ansible_ssh_pass=fedora
+
+or
+[web:vars]			--> use below username and pass for web group
+ansible_ssh_user=ansible
+ansible_ssh_pass=redhat	
+
+ad-hoc commands	: used for automating one time jobs
+playbooks	: used for repeatative jobs
+
+--------ad-hoc commands----
+ansible groupname -m modulename -a "arguments i.e key =  value"
+ 
+
