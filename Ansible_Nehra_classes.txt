@@ -115,3 +115,106 @@ cron: used to schedule cron jobs
 ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo Hello Shantayya>/var/log/messages"'
 
 
+----variables-----
+- hosts: web
+  tasks: 
+  - name: print message
+    debug: 
+      msg: "{{ iinvetory_hostname }}"			---> print system defined variable
+
+
+- hosts: RHEL
+  vars: 
+    salutatins: Hello Everyone				--> user defined variables
+  tasks: 
+  - name: print user defined variables
+    debug: 
+      msg: "{{ salutations }}"
+
+ 
+----ansible variable types---
+1. string type: defined in one line. [skills: http]
+2. list/array type: 
+	var:
+	 - http
+       - weblogic
+       - ansible
+3. dictionary type:
+	skills:
+      - web: http
+        app: weblogic
+        middleware: oracle
+
+- name: install httpd and deploy index.html
+  hosts: RHEL						
+  become: true
+  vars: 						or	vars_files:						--> to import var from file
+    apache: httpd						    - /home/shantayya/myvars.yaml	
+    apache_root: /var/www/html
+  tasks:
+    - name: install httpd
+      yum: 
+        name: httpd
+        state: installed
+    - name: enable httpd service
+      service: 
+        name: "{{ apache }}"
+        state: started
+        enabled: true
+    - name: create apache root directort "{{ apache }}"
+      file:
+        name: "{{ apache_root }}"
+        state: directory
+    - name: copy index.html
+      copy:
+        content: "Hello, Welcome to Swami and Sons"
+        dest: "{{ apache_root }}/index.html"
+
+
+
+- name: install linux packages
+  hosts: RHEL
+  become: true
+  vars:
+    myvars:
+     - ftp
+     - httpd
+     - vsftpd
+  tasks:
+   - name: install apckages
+     yum:  
+      name: "{{ myvars }}"					--> "{{ myvars[2] }}" using array to install vsftpd package only
+      state: installed
+
+
+- name: create users using loop
+  become: true
+  hosts: RHEL
+  - name: creatin users
+    user: 
+      name: "{{ item.name }}"					--> using variables through loop
+      uid: "{{ item.uid }}"
+      state: present
+    loop:
+      - nmae: shantayya
+        uid: 1020
+      - name: Shankar
+        uid: 1030
+      - name: Somnath
+        uid: 1040
+
+
+- name: promt for user
+  hosts: RHEL
+  vars_prompt:								--> using vars_prompt t accept user input
+     - name: user_name
+       prompt: Enter user name:
+       private: no
+     - name: password
+       prompt: Enter password:
+       private: yes
+  tasks:
+     - debug:
+        msg:" User name is {{ user_name }} and password is {{ password }}"
+
+ 
