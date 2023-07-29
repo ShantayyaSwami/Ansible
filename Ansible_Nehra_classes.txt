@@ -25,9 +25,9 @@ remote_user = ansible
 ask_pass = false
 
 [privilege_escalation]
-become = true
+become = True
 become_method = sudo
-become_user = root
+become_user = root				--> optional. bcz default become user is root only
 become_ask_pass = false
 
 Connection with managed nodes:
@@ -53,5 +53,65 @@ playbooks	: used for repeatative jobs
 
 --------ad-hoc commands----
 ansible groupname -m modulename -a "arguments i.e key =  value"
- 
+
+ansiblee-doc -l			--> shows list of ansible modules
+ansible-doc modulename		--> to see module details for how to use it.
+ansible web -m copy -a "src= dest="						--copy module. use -b(automaticaly takes root user) --become-method sudo remote_src=yes -> to copy fie from one loc to other in remote achine.
+										backup= yes --> to backup before copy
+Note: yellow color - action performed	green color-idempotency. task already performed in previous executions.  red color- error
+
+ansible web -m command -a "uptime"				--> command module only works if python2.4 or above present in machine + it cannot execute multiple commands
+ansible web -m raw -a "uptime;lablk"				--> raw module is used to execute low level commands. can be used as an option to command module.
+ansible web -m shell -a "/root/script.sh"			--> shell module used to execute scripts in remote machine.
+
+ansible web -m lineinfile -a 'dest=/root/hello.txt line="Thanks" insertafter=BOF/EOF/specific word from line state=absent'	--> lineinfile used to append content in file
+ansible web -m lineinfile -a 'dest=/root/hello.txt regexp=^This state=absent'		--> used to remove liine starting with This
+
+ansible web -m	replace -a 'dest=/root/hello.txt regexp=^Hi replace=hello'		--> used to replace word in file
+ansible web -m	user -a 'name=amit state=present/absent id=1010 group=wheel(primary)  groups=wheel(secondary)'		--> add user 
+ansible web -m	group -a 'name=rehl state=present/absent gid=1010'				--> add group
+
+---yum/dnf --> fedora distributions  apt--> debian package--> globally used for package management ---------
+ansible web -m yum/dnf/apt -a 'name=zsh state=present/installed or absent/remove or latest'  
+ansible web -m	package -a 'name=zsh state=present/installed or absent/remove or latest use=dnf/yum/apt'
+
+ansible web -m	yum_repository -a 'name=test description="test repo" enabled=1 gpgcheck=0 baseurl=file:///mnt/AppStream'	--> configure local repo. use state=absent if want to remove repo
+
+
+systemd: used to manage services and timer on remote machines
+ansile rhel9 -m systemd -a 'deamon-reload=true name=httpd state=restarted enabled=false masked=true/false'	--> masking service: symlinc moved to /dev/null) means sending servive in un-unsed state permanently until we unmask restarted : shutdown plus start again reload: only reloads its configuraton 
+
+Note: systemctl enable/disable --now httpd	--> start/stop plus enable/disable service at same time. 
+
+debug: used to print messages in system
+ansible rhel9 -m debug -a 'msg=Hello Shantayya'
+
+uri: used to validate urls
+ansible web -m uri -a 'url=www.google.com'
+
+ansible-galaxy collection install ansible.posix			--> install extra modules
+ansible-galaxy collection install community.general		--> install parted ansible module from community collection 
+
+parted: used to perform block device cnfiguraton
+ansibe web -m parted -a 'device=/dev/sdb number=1 part_end=10GiB state=present/absent'
+		parted -a 'device=/dev/sdb number=2/3/4 part_start=10GiB part_end=15GiB part_type=extended state=present'
+
+filesystem: usd to creat fs on partition
+ansible web -m filesystem a 'device=/dev/sdb fstype=xfs'
+
+lvg: used to create,remove volume groups
+ansible web -m lvg -a 'pvs=/dev/sdb2 vg=VolGrp state=present'
+ 		lvg -a 'vg=VolGrp state=absent'
+
+lvol: used to create,remove logical volumes.
+ansible web -m lvol -a 'vg=VolGrp lv=LogVol1 size=4G state=present'		--> use +2G to extend volume with 2GB size=100%free to use remaining full space
+ansible web -m lvol -a 'vg=VolGrp lv=LogVol1 state=absent force=true'		--> to remove lvm
+
+ansible web -m filesystem -a 'device=/dev/VolGrp/LogVol1 fstype=ext4'		--> format fs
+
+ansible web -m mount -a 'path=/path src=/dev/VolGrp/LogVol1 fstype=ext4 opts=default state=mounted'	--> mount fs. state=mounted makes entry in fstab also
+
+cron: used to schedule cron jobs
+ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo Hello Shantayya>/var/log/messages"'
+
 
