@@ -23,6 +23,7 @@ vi /etc/ansible/ansible.cfg
 inventory = /home/shantayya/inventory
 remote_user = ansible
 ask_pass = false
+gathering = explicit			--> dont gather the facts. define globally
 
 [privilege_escalation]
 become = True
@@ -189,11 +190,12 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
 
 - name: create users using loop
   become: true
+  gather_facts: false						--> dont gather facts. 
   hosts: RHEL
   - name: creatin users
     user: 
       name: "{{ item.name }}"					--> using variables through loop
-      uid: "{{ item.uid }}"
+      uid: "{{ item.uid }}"				
       state: present
     loop:
       - nmae: shantayya
@@ -217,4 +219,83 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
      - debug:
         msg:" User name is {{ user_name }} and password is {{ password }}"
 
+
+
+----Facts------------
+Anible facts are syste properties collection by ansible when playooks are executed on remote machine. 
+ansible all -m setup 
+
+magic variable: these system defined variables, like hostvars,groups_vars,groups etc
+
+----Vault--------
+ansible vault is a feature which allows you to encrypt the sensitive information like passwords or keys
+ansible-vault encrypt/edit/view/decrypt sample.yml		--> encrypt existing file
+ansible-playbook sample.yml --ask-vault-pass		---> execute yml file using vault password
+
+ansible-playbbook sample.yml --vault-password-file	--> you can put password in separate file(place file at location only known to you.) which can be provided an input for vault password
+
+ansibe-vault create password.yml				---> apply encryption on fie while creating it.
+pw: redhat
+
+hosts: node2
+vars:
+  - /home/ansible/password.yml
+tasks:
+ - name: create user with password
+   user:
+     name: shantayya
+     pass: "{{ pw }}"
+
+ansible-playbook sample.yml --ask-vault-pass		--> provide password of password.yml encrypted file
+
+
+ansible-vault rekey /home/ansible/password.yml		--> change encrypted file password
+
+
+----Loop-----
+loop,with_items used for executing loop statements in ansible. until keyword used with condition
+ansible-doc -t lookup -l	--> shows list of keyworss used in lookup
+hosts: RHEL
+tasks:
+ - name: create user
+   user:
+     name: "{{ item }}"
+     state: present
+   with_items/loops:
+     - shantayya
+     - somnath
+     - shankar
+
+--use hashed in loop----
+- name: create users using loop
+  become: true
+  hosts: RHEL
+  - name: creatin users
+    user: 
+      name: "{{ item.name }}"					--> using variables through loop
+      groups: "{{ item.groups }}"				
+      state: present
+    loop:
+      - { name: 'shantayya', groups: wheel }
+      - { name: 'shankar', groups: root }
+      - { name: 'Somnath', groups: rhel }
  
+
+--when: used for condition----
+hosts: RHEL
+tasks:
+ - name: print on redhat machine
+   shell: echo "Hello This is redhat machine"
+   when: ansible_distribution == 'Redhat
+ 
+ - name: print on ubuntu macine
+   shell: echo "Hello this is ubantu machine"
+   when: ansible_distribution == 'Ubantu'
+
+
+hosts: RHEL
+tasks:
+ - name: execute loop based on condition
+   command: echo {{ item }}
+   loop: [0,2,4,6,8,10]
+   when: item > 5
