@@ -68,7 +68,7 @@ ansible web -m shell -a "/root/script.sh"			--> shell module used to execute scr
 ansible web -m lineinfile -a 'dest=/root/hello.txt line="Thanks" insertafter=BOF/EOF/specific word from line state=absent'	--> lineinfile used to append content in file
 ansible web -m lineinfile -a 'dest=/root/hello.txt regexp=^This state=absent'		--> used to remove liine starting with This
 
-ansible web -m	replace -a 'dest=/root/hello.txt regexp=^Hi replace=hello'		--> used to replace word in file
+ansible web -m	replace -a 'path=/root/hello.txt regexp=^Hi replace=hello'		--> used to replace word in file
 ansible web -m	user -a 'name=amit state=present/absent id=1010 group=wheel(primary)  groups=wheel(secondary)'		--> add user 
 ansible web -m	group -a 'name=rehl state=present/absent gid=1010'				--> add group
 
@@ -299,3 +299,172 @@ tasks:
    command: echo {{ item }}
    loop: [0,2,4,6,8,10]
    when: item > 5
+
+
+-------------Process management---------
+ansible -m command -a 'pgrep httpd or ps -elf httpd or ps -C httpd'
+		      'kill -9 pid'
+
+
+hosts: all
+become: yes
+ignore_errors: yes
+tasks:
+ - name: get process id
+   shell: "ps -ef | grep httpd | awk '{print $2}'"
+   register: running_processes
+ - name: print process id
+   debug:
+     msg: "{{ running_prrocesses }}"
+ - name: kill running processes
+   shell: "kill -9 {{ item }}"
+   with_items: "{{ running_processes.stdout.lines }}"
+
+-------Permission management------------
+ansible -m command -a 'ls -s /etc/redhat-release  /tmp/os-version'
+
+hosts: all
+become: yes
+tasks:
+ - name: create file with permisison
+   file: 
+     path: /home/shantayya/extra.conf
+     state: touch
+     mode: u=rw,g=r,o=r						--> use u+rw,g-rw,o-rw	--> to add or remove permisisons on existing file
+								--> we can use recurse = yes to update permisisons on directory recursively
+
+ - name: create soft link
+   file:
+     src: '/etc/redhat-release'
+     dest: '/tmp/os-version'
+     owner: shantayya
+     group: shantayya
+     state: link/hard
+
+
+-----storage management----------
+ansible node1 -m shell -a 'sudo lsblk -l'
+ansible node1 -m raw -a 'echo -e n\np\n1\n\n\nw' | sudo fdisk /dev/sda
+	   command -a 'sudo partprobe /dev/sda'
+	   command -a 'lsblk - l'
+	   command -a 'mkfs.ext4 /dev/sda1'   or
+	   filesystem -a 'dev=/dev/sda1 fstype=ext4 state=present force=true' -b 
+           command -a 'mkdir /test'
+           command -a 'mount /dev/sda1 /test'
+           command -a 'df -hT'
+	   lineinfile -a 'path=/etc/fstab line="/dev/sda1 /test ext4 defaults 0 0" state=present' -b   or
+	   mount -a 'path=/test  src=/dev/sda1 fstype=ext4 opts=rw state=present/mounted' -b	 --> present state akes entry in fstab but dir will nt be mounted. so we can use mounted instead.
+	   command -a 'sudo mount -a'
+
+
+- name: storage management through ansible
+  hosts: node1
+  become: yes
+  tasks:
+   - name: create 1GB partiton on /dev/sda
+     parted:
+       device: /dev/sda
+       number: 1
+       state: present
+       part_end: 1GiB
+   - name: create 1GB LVM partition
+     parted: 
+       device: /dev/sda
+       number: 2
+       flag: [ lvm/swap ]
+       state: present
+       part_start: 1GiB				--> use -1GiB to create partition at end of disk
+       fs_type: ext4
+   - name: create partition using gpt
+     parted: 
+       label: gpt
+       name: p1
+       device: /dev/sda
+       number: 6
+       flag: [ lvm ]
+       state: present
+       part_start: 0%
+       part_end: 10%				--> create partition of size till 10% of disk
+       unit: '%'
+   - name: format the file system 
+     filesystem:
+       fstype: ext4
+       dev: /dev/sda1/2/3 etc
+       force: true
+   - name: mount /dev/sda1
+     mount:
+       path: /test
+       src: /dev/sda1
+       fstype: ext4
+       state: present/mounted
+       opts: rw
+          
+
+ansible node1 -m shell -a 'sudo lsblk -l'
+ansible node1 -m raw -a 'echo -e n\np\n1\n\n\nw' | sudo fdisk /dev/sda
+		 lvg -a 'pvs=/dev/sdaa vg=nehraclasses pesize=32' -b  	--> physical extent default 4MB.
+		 lvol -a 'vg=nehraclasses lv=v1 size=1G' -b
+                 filesystem -a 'dev=/dev/nehraclasses/lv1 fstype=ext4 state=present force=true' -b 
+                 command -a 'mkdir /opt''
+                 command -a 'df -hT'
+	   	 mount -a 'path=/opt  src=/dev/nehracasses/lv1 fstype=ext4 opts=defaults state=present/mounted' -b	 --> present state akes entry in fstab but dir will nt be mounted. so we can use mounted instead.
+	         command -a 'sudo mount -a'
+
+                 lvol -a 'vg=nehraclasses lv=v1 size=+1G resizefs=true' -b 		---> extend lvm
+
+- name: LVM management through ansible
+  hosts: node1
+  become: yes
+  tasks:
+   - name: create 1GB LVM partition
+     parted: 
+       device: /dev/sda
+       number: 1
+       flag: [ lvm/swap ]
+       state: present
+       part_start: 1GiB				--> use -1GiB to create partition at end of disk
+       fs_type: ext4
+   - name: create volume group on /dev/sda1 with physical extent 32 MB
+     lvg:
+       vg: volGroup
+       pvs: /dev/sda1
+       pesize: 32M
+   - name: create thinpool on volume group 
+     lvol:
+       vg: volGroup
+       thinpool: testpool
+       size: 500G
+   - name: create lv out of testpool
+     lvol:
+       vg: volGroup
+       lv: lvcache
+       thinpool: testpool
+       size: 1G					--> use 100%FREE to create lvm of remaining size. or +1G to extend lvm with 1GB or -1G to reduce with 1GB
+       opts: --type cache-pool			--> state: absent force=true	for removing lv
+       active: false				--> use this option to deactivate lvm
+
+
+
+----------Package Management using ansible-----------------------
+yum history		--> to see what actions has been taken plus we can undo changes from this history. 
+yum history info <number> 		--> shows details info about event 
+
+ansible web -m	yum_repository -a 'name=epel description="EPEL repo" enabled=true gpgcheck=true gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-$releaseever baseurl=file:///mnt/AppStream'	-b --> configure local repo. use state=absent if want to remove repo
+
+- name: Linux patching
+  hosts: redhat
+  become: yes
+  tasks: 
+   - name: upgrade all pacages 
+     dnf:
+      name: '*'
+      state: latest
+      exclude: kernal*,chrony*				--> patch all packages except kernal,chrony related pckges
+     when: ansible_os_family == 'RedHat'
+     become: yes
+   - name: install Development group packages
+     yum: 
+      name: '@Development tools'
+      state: present
+	
+       
