@@ -466,5 +466,10 @@ ansible web -m	yum_repository -a 'name=epel description="EPEL repo" enabled=true
      yum: 
       name: '@Development tools'
       state: present
-	
+   - name: upgrade all security packages
+     dnf:
+      name: '*'
+      state: latest
+      security: yes					--> apply security patches. 
+     become: yes
        
