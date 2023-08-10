@@ -466,10 +466,84 @@ ansible web -m	yum_repository -a 'name=epel description="EPEL repo" enabled=true
      yum: 
       name: '@Development tools'
       state: present
-   - name: upgrade all security packages
-     dnf:
-      name: '*'
-      state: latest
-      security: yes					--> apply security patches. 
-     become: yes
-       
+	
+
+-------Future task management using ansible--------
+ansible -m shell -a 'echo "Shantayya Swami, you are awesome" | at 22:04' -b		--> comman module does not work with filters
+	-m at -a 'command=lsbk count=1 units=minuts' -b					--> units=minutes/hours/days/weeks
+
+ansible -m cron -a 'name=schedule cron job="cat /etc/hosts" minute=04 hour=22 user=shantayya' -b
+	   cron -a 'name=start nm job="/home/startNodeManager.sh" special_time=reboot user=orafmw'	
+
+- name: schedule yum update
+  hosts: rhel
+  become: yes
+  tasks:
+   - name: yum update using crontab 
+     cron: 
+      name: "yum update"
+      job: "yum update"
+      special_time=reboot				--> use this only want to execute command after reboot
+      hour: "10"
+      weekday: "6"
+      user: root
+      state: absent					--> use state=absent to remove cron job
+   - name: schedule post reboot tasks
+     at:
+       special_time: reboot
+       job: "script.sh"
+
+
+------------Firewall management using Ansible------------
+Note: please note that if you add or remove services or ports, the changes might not take effect until you restart the services that rely on those ports (for example, web server services like Apache or Nginx). But for simple rule modifications like rejecting traffic from a specific IP address, the changes should take effect without requiring a full reload of the firewalld configuration.
+
+- name: implement firewalld using ansible 
+  hosts: RHEL
+  become: yes
+  tasks:
+    - name: install firewalld package on machine
+      package: 
+        name: firewalld
+        state: present
+
+    - name: start and enable fireewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+    
+    - name: enable traffic on http
+      firewalld:
+        service: http
+        permanent: true
+        state: enabled
+
+    - name: reject traffic from 192.168.15.15 IP address
+      firewalld:
+        zone: public
+        source: 192.168.15.15
+        state: present
+        action: reject
+    
+    - name: disable port 22
+      firewalld:
+        port: 22/tcp
+        action: disabled
+        immediate: yes					--> use this if dont want to reload firewalld configurations
+    
+    - name: forward 443 port to 8443
+      firewalld:
+        rich_rule: rule family=ipv4 forward-port port=443 protocol=tcp to-port=8443
+        zone: public
+        permanent: true
+        state: enabled
+        immediate: yes 
+    
+    - name: reload firewalld confiurations
+      systemd:
+        name: firewalld
+        state: reloaded
+        
+
+
+   
