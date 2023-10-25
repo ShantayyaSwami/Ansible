@@ -43,7 +43,7 @@ syntax: ansible <hostname or groupname> -i <inv-file> -m <module_name> -a (argum
 fetching the output- using register keyword + using debug module to print var
 
 use conditionals to control play execution- Handlers - notify, when , with_items, with_files
-note: handlers are defined out of tasks block and notify will be called from task
+note: handlers are defined out of tasks block and notify will be called from task. in recent Ansible versions with_items replaced with loop. 
 
 Configure error-handling : ignore_errors = yes, (under task name)block-rescue, always
 ignore_errors- ansible stops execution when perticular task fails but if we still want to continue with remainig steps then we can use ignore_errors +
@@ -248,7 +248,9 @@ vi network.j2
     template: 
       src: /home/ansible/network.j2
       dest: /var/www/html/httpd.conf
-    notify: "restart httpd"
+    notify: "restart httpd"				--> we can call handler with name or listen name. calling with name is deprecated feature. 
+
+note: handlers are automatically executed when notify call it. no need of listen. 
 
  
 ----------------Ansible variables, pass variables using -e "@users.lst"  ------------------------------
@@ -370,4 +372,58 @@ vi vault.yml
 
 ansible-playbook vault.yml --vault-id prod@vault
 ---------------------------------------------------------------------------------
+
+
+-----practice playbook---------
+...
+hosts: webservers
+become: yes
+tasks:
+  - name: install apache
+    yum:
+     name: httpd
+     state: latest
+    notify:
+     - "start httpd"
+
+  - name: create html file
+    file:
+     path: /var/www/html/index.html
+     state: touch
+    register: output
+    debug: msg=" File is created with {{output}}"
+
+  - name: add lines in html file
+    lineinfile:
+     path: /var/www/html/index.html
+     line: "Welcome to India"
+  
+  - name: create users
+    users:
+      name: {{item}}
+      with_items:
+        - shantanu
+        - somnath
+        - shankar
+      when: 
+        - ansible_hosstname == "shantayya.com"
+  
+  - name: get url
+    block: 
+     get_url: 
+       url: "https://shantayya.com/index.html"
+       dest: /var/www/html/
+     rescue: 
+     degug: msg="Index file does not exist"
+    always: 
+     debug: msg="Playbook completed"
+      
+handlers:
+  - name: start httpd
+    service: 
+     name: httpd
+     state: started
+     enabled: yes
+    listen: "start httpd"
+...
 
