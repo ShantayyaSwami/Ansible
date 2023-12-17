@@ -57,7 +57,7 @@ ansible groupname -m modulename -a "arguments i.e key =  value"
 
 ansiblee-doc -l			--> shows list of ansible modules
 ansible-doc modulename		--> to see module details for how to use it.
-ansible web -m copy -a "src= dest="						--copy module. use -b(automaticaly takes root user) --become-method sudo remote_src=yes -> to copy fie from one loc to other in remote achine.
+ansible web -m copy -a "src= dest="						--copy module. use -b(automaticaly takes root user) --become-method sudo remote_src=yes -> to copy fie from one loc to other in remote machine.
 										backup= yes --> to backup before copy
 Note: yellow color - action performed	green color-idempotency. task already performed in previous executions.  red color- error
 
@@ -66,7 +66,7 @@ ansible web -m raw -a "uptime;lablk"				--> raw module is used to execute low le
 ansible web -m shell -a "/root/script.sh"			--> shell module used to execute scripts in remote machine.
 
 ansible web -m lineinfile -a 'dest=/root/hello.txt line="Thanks" insertafter=BOF/EOF/specific word from line state=absent'	--> lineinfile used to append content in file
-ansible web -m lineinfile -a 'dest=/root/hello.txt regexp=^This state=absent'		--> used to remove liine starting with This
+ansible web -m lineinfile -a 'dest=/root/hello.txt regexp=^This state=absent'		--> used to remove line starting with This
 
 ansible web -m	replace -a 'path=/root/hello.txt regexp=^Hi replace=hello'		--> used to replace word in file
 ansible web -m	user -a 'name=amit state=present/absent id=1010 group=wheel(primary)  groups=wheel(secondary)'		--> add user 
@@ -80,7 +80,7 @@ ansible web -m	yum_repository -a 'name=test description="test repo" enabled=1 gp
 
 
 systemd: used to manage services and timer on remote machines
-ansile rhel9 -m systemd -a 'deamon-reload=true name=httpd state=restarted enabled=false masked=true/false'	--> masking service: symlinc moved to /dev/null) means sending servive in un-unsed state permanently until we unmask restarted : shutdown plus start again reload: only reloads its configuraton 
+ansile rhel9 -m systemd -a 'daemon-reload=true name=httpd state=restarted enabled=false masked=true/false'	--> masking service: symlinc moved to /dev/null) means sending servive in un-unsed state permanently until we unmask restarted : shutdown plus start again reload: only reloads its configuraton 
 
 Note: systemctl enable/disable --now httpd	--> start/stop plus enable/disable service at same time. 
 
@@ -93,7 +93,7 @@ ansible web -m uri -a 'url=www.google.com'
 ansible-galaxy collection install ansible.posix			--> install extra modules
 ansible-galaxy collection install community.general		--> install parted ansible module from community collection 
 
-parted: used to perform block device cnfiguraton
+parted: used to perform block device configuraton
 ansibe web -m parted -a 'device=/dev/sdb number=1 part_end=10GiB state=present/absent'
 		parted -a 'device=/dev/sdb number=2/3/4 part_start=10GiB part_end=15GiB part_type=extended state=present'
 
@@ -126,7 +126,7 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
 
 - hosts: RHEL
   vars: 
-    salutatins: Hello Everyone				--> user defined variables
+    salutations: Hello Everyone				--> user defined variables
   tasks: 
   - name: print user defined variables
     debug: 
@@ -138,13 +138,13 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
 2. list/array type: 
 	var:
 	 - http
-       - weblogic
-       - ansible
+         - weblogic
+         - ansible
 3. dictionary type:
 	skills:
-      - web: http
-        app: weblogic
-        middleware: oracle
+      	- web: http
+          app: weblogic
+          middleware: oracle
 
 - name: install httpd and deploy index.html
   hosts: RHEL						
@@ -195,10 +195,17 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
   - name: creatin users
     user: 
       name: "{{ item.name }}"					--> using variables through loop
+      shell: /bin/bash|/bin/zsh etc
+      home: /path/to/home/dir
+      comment: description
+      group: set users primary group
+      groups: list of groups to add user to 
+      append: yes|no						--> set append: no means remove user from all the groups except mentione in groups. 
       uid: "{{ item.uid }}"				
-      state: present
+      state: present | absent
+      password_lock: yes					--> use this option if wanted user account to be locked
     loop:
-      - nmae: shantayya
+      - name: shantayya
         uid: 1020
       - name: Shankar
         uid: 1030
@@ -208,7 +215,7 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
 
 - name: promt for user
   hosts: RHEL
-  vars_prompt:								--> using vars_prompt t accept user input
+  vars_prompt:								--> using vars_prompt to accept user input
      - name: user_name
        prompt: Enter user name:
        private: no
@@ -222,7 +229,7 @@ ansible web -m cron -a 'name=test weekday=1 user=root min=48 hour=22 job="echo H
 
 
 ----Facts------------
-Anible facts are syste properties collection by ansible when playooks are executed on remote machine. 
+Anible facts are system properties collection by ansible when playooks are executed on remote machine. 
 ansible all -m setup 
 
 magic variable: these system defined variables, like hostvars,groups_vars,groups etc
@@ -234,7 +241,7 @@ ansible-playbook sample.yml --ask-vault-pass		---> execute yml file using vault 
 
 ansible-playbbook sample.yml --vault-password-file	--> you can put password in separate file(place file at location only known to you.) which can be provided an input for vault password
 
-ansibe-vault create password.yml				---> apply encryption on fie while creating it.
+ansibe-vault create password.yml				---> apply encryption on file while creating it.
 pw: redhat
 
 hosts: node2
@@ -300,6 +307,27 @@ tasks:
    loop: [0,2,4,6,8,10]
    when: item > 5
 
+----Archive-Backup-----------
+hosts: all
+become: yes
+tasks:
+  - name: backup dir
+    archive: 
+      path: 
+        - /path/to/file
+        - /path/to/dir
+        - /globbing/using/path/*
+      exlclude_path:
+	- file/to/exclude
+        - dir/to/exclude
+        - glob/to/ex*
+      format: gz|tar|xz|zip
+      dest: name/of/archive.tgz
+  - name: restore the backup
+    unarchive:
+      src: path/to/tgz
+      dest: /path/to/unarchive
+      remote_src: yes|no
 
 -------------Process management---------
 ansible -m command -a 'pgrep httpd or ps -elf httpd or ps -C httpd'
@@ -353,7 +381,7 @@ ansible node1 -m raw -a 'echo -e n\np\n1\n\n\nw' | sudo fdisk /dev/sda
            command -a 'mount /dev/sda1 /test'
            command -a 'df -hT'
 	   lineinfile -a 'path=/etc/fstab line="/dev/sda1 /test ext4 defaults 0 0" state=present' -b   or
-	   mount -a 'path=/test  src=/dev/sda1 fstype=ext4 opts=rw state=present/mounted' -b	 --> present state akes entry in fstab but dir will nt be mounted. so we can use mounted instead.
+	   mount -a 'path=/test  src=/dev/sda1 fstype=ext4 opts=rw state=present/mounted' -b	 --> present state makes entry in fstab but dir will nt be mounted. so we can use mounted instead.
 	   command -a 'sudo mount -a'
 
 
@@ -365,8 +393,8 @@ ansible node1 -m raw -a 'echo -e n\np\n1\n\n\nw' | sudo fdisk /dev/sda
      parted:
        device: /dev/sda
        number: 1
-       state: present
-       part_end: 1GiB
+       state: present						--> /absent/info
+       part_end: 1GiB						--> /100%
    - name: create 1GB LVM partition
      parted: 
        device: /dev/sda
@@ -396,8 +424,9 @@ ansible node1 -m raw -a 'echo -e n\np\n1\n\n\nw' | sudo fdisk /dev/sda
        path: /test
        src: /dev/sda1
        fstype: ext4
-       state: present/mounted
+       state: present/mounted/unmounted/absent
        opts: rw
+       backup: yes|no					--> backup /etc/fstab file for recovery
           
 
 ansible node1 -m shell -a 'sudo lsblk -l'
@@ -429,9 +458,10 @@ ansible node1 -m raw -a 'echo -e n\np\n1\n\n\nw' | sudo fdisk /dev/sda
        vg: volGroup
        pvs: /dev/sda1
        pesize: 32M
+       state: present
    - name: create thinpool on volume group 
-     lvol:
-       vg: volGroup
+     lvol:								--> shrink: yes|no
+       vg: volGroup							    resizefs: yes|no
        thinpool: testpool
        size: 500G
    - name: create lv out of testpool
@@ -482,11 +512,15 @@ ansible -m cron -a 'name=schedule cron job="cat /etc/hosts" minute=04 hour=22 us
    - name: yum update using crontab 
      cron: 
       name: "yum update"
-      job: "yum update"
-      special_time=reboot				--> use this only want to execute command after reboot
-      hour: "10"
+      job: "yum update"						--> command
+      special_time=reboot|daily|weekly				--> use this only want to execute command after reboot
+      minute: "0-59|*|*/2"
+      hour: "0-23|*|*/2"
+      day: "1-31|*|*/2"
+      month: "1-12|*|*/2"
       weekday: "6"
       user: root
+      cron_file: filename
       state: absent					--> use state=absent to remove cron job
    - name: schedule post reboot tasks
      at:
@@ -516,7 +550,7 @@ Note: please note that if you add or remove services or ports, the changes might
       firewalld:
         service: http
         permanent: true
-        state: enabled
+        state: enabled/disabled/present/absent
 
     - name: reject traffic from 192.168.15.15 IP address
       firewalld:
@@ -544,6 +578,109 @@ Note: please note that if you add or remove services or ports, the changes might
         name: firewalld
         state: reloaded
         
+----selinux policy------------
+selinux module change the policy and state of SELinux
+- name: show options available for selinux
+  selinux: 
+    configfile: path/to/config
+    policy: targeted
+    state: permissive|enforcing|disabled
+- name: show options for seboolean
+  seboolean: 							--> seboolean module toggle seboolean options
+    name: boolean name
+    state: no|yes
+    persistent: yes|no
+- name: show options for sefcontext module			--> manage selinux file context mapping definition
+  sefcontext: 
+     target: 'path/to/dir(/.*)?'
+     setype: selinux_type
+     state: present|absent
+  command: restorecon -irv /path/to/dir				--> restorecon used to set secutiry context of file to specified values or deafualt 
 
+--------patching using ansible----------------
+patches are new lines of code released to fix the existing bugs,introduce new features and improve performance etc
+Standard patching procedure:
+1. check for patch updates i.e dnf check-update;dnf repolist all
+2. check for system downtime with teams
+3. raise change request through serviceNow 
+4. collect pre-check infor and document them 
+
+#!/bin/bash
+
+echo -e "Date information" >>/home/swami/"pre_patch_$(date+"%d-%m-%Y").txt"
+date >>/home/swami/"pre_patch_$(date+"%d-%m-%y").txt" 2>&1
+
+echo -e "Mounted file system" ----
+df -hT >>
+
+echo -e "Block ID infor" --
+blkid >>
+lsblk >>
+fdisk -l >>
+cat /etc/fstab >>
+vdgisplay >>
+lvdisplay >>
+multipath -ll >>
+ifconfig -a >>
+free -m >>
+uptime >>
+cat /etc/grub2.cfg >>
+ps -ef >>
+top >>
+route -n >>
+
+5. take server backup or snapshot
+6. co-ordinate with other involed teams to patch.
+7. execute above script as post-check and compare results
+8. check with teams that apps/d working as expected
+9. close change
+
+manually patching:
+dnf update <package-name> -y 
+dnf downgrade <package-name> -y		--> if want to rollback update for perticular package
+dnf history 				--> shows dnf event
+
+dnf history info <ID> 			--> to see detailed info about event you will find ID in dnf history command
+dnf history undo <ID>			--> to rollback dnf event
+
+dnf update -y				--> update all packages
+reboot
+
+
+ansible patching:
+?
+- name: Patching through ansible
+  hosts: Middleware
+  become: true
+  tasks:
+   - name: execute pre-checks
+     script: /home/swami/precheck.sh
+     args:
+      - creates: /home/swami/precheck.sh
+   - name: update packages
+     dnf: 
+       name: "*"
+       latest: yes
+     notify: Reboot machines
+
+   - name: execute post checks
+     script: /home/swami/postcheck.sh
+     args: 
+       - creates: /home/swami/postcheck.sh
+   - name: get result file names
+     shell: find /home/swami/ -type f -name "*.txt" | cut -d '/' -f2
+     register: result
+   - name: fetch checks results
+     fetch: 
+       src: /home/swami/{{ item }}
+       dest: /home/swami/
+     with_items: "{{ result.stdout_lines }}"
+  handlers:   
+   - name: reboot machines
+     reboot: 
+       reboot_timeut: 60
+
+
+----using dynamic inventory--------------
 
    
